@@ -1,0 +1,9 @@
+[submodule "src/pydal"]
+	path = src/pydal
+	url = https://github.com/web2py/pydal
+[submodule "src/bottle"]
+	path = src/bottle
+	url = https://github.com/bottlepy/bottle
+[submodule "src/pyjwt"]
+	path = src/pyjwt
+	url = https://github.com/jpadilla/pyjwt
