@@ -7,6 +7,7 @@ from pydal.pydal import DAL
 
 class ChocolateApp(object):
     def __init__(self, app_name):
+        self.name = app_name
         self.app = Bottle()
         self.route = self.app.route
         self.app.mount("/{}".format(app_name), self.app)
