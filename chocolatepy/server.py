@@ -14,7 +14,7 @@ class ChocolateServer(object):
     def __init__(self):
         self.server = Bottle()
 
-    def register_app(self, *args, **kwargs):
+    def register_apps(self, *args, **kwargs):
         default_app = None
 
         for k, v in kwargs.items():
