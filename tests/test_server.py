@@ -60,8 +60,30 @@ def test_register_apps(app_one, app_two, app_three):
 def test_register_apps_with_default_app(app_one, app_two, app_three):
     server = ChocolateServer()
 
-    server.register_apps(app_one, app_two, app_three, default_app=app_two)
+    server.register_apps(app_one, app_three, default_app=app_two)
 
     app = TestApp(server.server)
 
     assert app.get("/two").text == app.get("/").text
+
+
+def test_register_non_chocolate_app(app_one, app_two, app_three):
+    server = ChocolateServer()
+
+    bad_app = "app_four"
+
+    try:
+        server.register_apps(app_one, app_two, app_three, bad_app)
+    except Exception as e:
+        assert e.message == "Attempt to register: {}".format(type(bad_app))
+
+
+def test_register_non_chocolate_app_as_default(app_one, app_two, app_three):
+    server = ChocolateServer()
+
+    bad_app = 4
+
+    try:
+        server.register_apps(app_one, app_two, app_three, default_app=bad_app)
+    except Exception as e:
+        assert e.message == "Attempt to register: {}".format(type(bad_app))
