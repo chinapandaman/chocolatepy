@@ -2,42 +2,26 @@
 
 import pytest
 from chocolatepy import ChocolateApp
+from webtest import TestApp
 
 
 @pytest.fixture
-def app_one():
-    app = ChocolateApp("one")
+def app():
+    app = ChocolateApp("app")
 
     @app.route("/")
     def index():
-        return "one"
+        return "app"
 
     return app
 
 
-@pytest.fixture
-def app_two():
-    app = ChocolateApp("two")
+def test_app_init(app):
+    assert app.name == "app"
 
-    @app.route("/")
-    def index():
-        return "two"
+    test_app = TestApp(app.app)
 
-    return app
+    assert test_app.get("/app").status == "200 OK"
+    assert test_app.get("/app").text == "app"
 
-
-@pytest.fixture
-def app_three():
-    app = ChocolateApp("three")
-
-    @app.route("/")
-    def index():
-        return "three"
-
-    return app
-
-
-def test_app_init(app_one, app_two, app_three):
-    assert app_one.name == "one"
-    assert app_two.name == "two"
-    assert app_three.name == "three"
+    assert test_app.get("/app").text == test_app.get("/").text
