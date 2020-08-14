@@ -5,12 +5,16 @@ from bottle import Bottle, run
 from app import ChocolateApp
 
 
-class NonChocolateAppError(Exception):
+class BaseServerException(Exception):
+    """Base Exception for ChocolateServer"""
+
+    pass
+
+
+class NonChocolateAppError(BaseServerException):
     """Raised when attempting to register a non-chocolate app"""
 
-    def __init__(self, message=""):
-        super().__init__(message)
-        self.message = message
+    pass
 
 
 class ChocolateServer(object):
@@ -23,14 +27,12 @@ class ChocolateServer(object):
         for k, v in kwargs.items():
             if k == "default_app":
                 if not isinstance(v, ChocolateApp):
-                    raise NonChocolateAppError(
-                        "Attempt to register: {}".format(type(v))
-                    )
+                    raise NonChocolateAppError
                 default_app = v
 
         for each in reversed(args):
             if not isinstance(each, ChocolateApp):
-                raise NonChocolateAppError("Attempt to register: {}".format(type(each)))
+                raise NonChocolateAppError
 
             if each == default_app:
                 continue

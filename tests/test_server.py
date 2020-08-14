@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from chocolatepy import ChocolateApp, ChocolateServer
+from chocolatepy import ChocolateApp, ChocolateServer, NonChocolateAppError
 from webtest import TestApp
 
 
@@ -74,8 +74,8 @@ def test_register_non_chocolate_app(app_one, app_two, app_three):
 
     try:
         server.register_apps(app_one, app_two, app_three, bad_app)
-    except Exception as e:
-        assert e.message == "Attempt to register: {}".format(type(bad_app))
+    except NonChocolateAppError:
+        assert True
 
 
 def test_register_non_chocolate_app_as_default(app_one, app_two, app_three):
@@ -85,5 +85,5 @@ def test_register_non_chocolate_app_as_default(app_one, app_two, app_three):
 
     try:
         server.register_apps(app_one, app_two, app_three, default_app=bad_app)
-    except Exception as e:
-        assert e.message == "Attempt to register: {}".format(type(bad_app))
+    except NonChocolateAppError:
+        assert True
