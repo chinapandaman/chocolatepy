@@ -4,3 +4,4 @@ isort
 pyDAL
 pyjwt
 pytest
+webtest
