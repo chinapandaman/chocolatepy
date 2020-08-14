@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from app import ChocolateApp
-
 from bottle import Bottle, run
 
+from app import ChocolateApp
 
-class NonChocolateAppError(Exception):
+
+class BaseServerException(Exception):
+    """Base Exception for ChocolateServer"""
+
+    pass
+
+
+class NonChocolateAppError(BaseServerException):
     """Raised when attempting to register a non-chocolate app"""
 
     pass
@@ -21,12 +27,12 @@ class ChocolateServer(object):
         for k, v in kwargs.items():
             if k == "default_app":
                 if not isinstance(v, ChocolateApp):
-                    raise NonChocolateAppError()
+                    raise NonChocolateAppError
                 default_app = v
 
         for each in reversed(args):
             if not isinstance(each, ChocolateApp):
-                raise NonChocolateAppError()
+                raise NonChocolateAppError
 
             if each == default_app:
                 continue

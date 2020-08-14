@@ -6,4 +6,4 @@ install:
 before_script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/chocolatepy
 script:
-  - pytest
+  - pytest -v
