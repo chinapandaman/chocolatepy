@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from app import ChocolateApp
-from bottle.bottle import Bottle, run
+from bottle import Bottle, run
 
 
 class NonChocolateAppError(Exception):

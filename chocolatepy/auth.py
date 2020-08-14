@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from pydal.pydal import Field
+from pydal import Field
 
 
 class Auth(object):
