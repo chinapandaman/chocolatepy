@@ -1,6 +1,5 @@
 black
 bottle
-coverage
 isort
 pyDAL
 pyjwt
