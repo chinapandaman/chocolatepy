@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from auth import Auth
-from bottle.bottle import Bottle
-from pydal.pydal import DAL
+from bottle import Bottle
+from pydal import DAL
 
 
 class ChocolateApp(object):

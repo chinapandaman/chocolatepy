@@ -1,0 +1,6 @@
+black
+bottle
+isort
+pyDAL
+pyjwt
+pytest

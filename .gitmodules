@@ -1,9 +1,0 @@
-[submodule "chocolatepy/pydal"]
-	path = chocolatepy/pydal
-	url = https://github.com/web2py/pydal
-[submodule "chocolatepy/bottle"]
-	path = chocolatepy/bottle
-	url = https://github.com/bottlepy/bottle
-[submodule "chocolatepy/pyjwt"]
-	path = chocolatepy/pyjwt
-	url = https://github.com/jpadilla/pyjwt
