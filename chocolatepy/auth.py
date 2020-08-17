@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from pydal import Field
+from pydal.validators import CRYPT
 
 
 class Auth(object):
@@ -26,3 +27,12 @@ class Auth(object):
             Field("user_id", "reference auth_user"),
             Field("group_id", "reference auth_group"),
         )
+
+    def register(self, username, password):
+        hashed_password = self.encrypt(password)
+        self.db.auth_user.insert(**{"username": username, "password": hashed_password})
+        self.db.commit()
+
+    @staticmethod
+    def encrypt(string):
+        return str(CRYPT(salt=False)(string)[0])
