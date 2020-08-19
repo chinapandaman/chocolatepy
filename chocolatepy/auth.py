@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime, timedelta
+
+import jwt
 from pydal import Field
 from pydal.validators import CRYPT
 
@@ -28,6 +31,10 @@ class Auth(object):
             Field("group_id", "reference auth_group"),
         )
 
+        self.jwt_secret = "secret"
+        self.jwt_exp = 3600
+        self.jwt_alg = "HS256"
+
     def register(self, username, password):
         user_existed = len(
             self.db(self.db.auth_user.username == username).select(
@@ -47,3 +54,11 @@ class Auth(object):
     @staticmethod
     def encrypt(string):
         return str(CRYPT(salt=False)(string)[0])
+
+    def encode_token(self, user_id):
+        payload = {
+            "exp": datetime.utcnow() + timedelta(seconds=self.jwt_exp),
+            "iat": datetime.utcnow(),
+            "sub": user_id,
+        }
+        return jwt.encode(payload, self.jwt_secret, self.jwt_alg)
