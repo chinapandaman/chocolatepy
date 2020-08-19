@@ -90,3 +90,15 @@ def test_auth_encode_token(db):
     payload = jwt.decode(token, auth.jwt_secret)
 
     assert payload["sub"] == user_id
+
+
+def test_auth_login_and_receive_token(db):
+    auth = Auth(db)
+
+    username = "foo"
+    password = "bar"
+
+    assert not auth.login(username, password)
+
+    auth.register(username, password)
+    assert auth.login(username, password)

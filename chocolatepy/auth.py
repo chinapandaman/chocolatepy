@@ -51,6 +51,21 @@ class Auth(object):
 
         return True
 
+    def login(self, username, password):
+        user = (
+            self.db(
+                (self.db.auth_user.username == username)
+                & (self.db.auth_user.password == self.encrypt(password))
+            )
+            .select(self.db.auth_user.id)
+            .first()
+        )
+
+        if not user:
+            return False
+
+        return self.encode_token(user["id"])
+
     @staticmethod
     def encrypt(string):
         return str(CRYPT(salt=False)(string)[0])
