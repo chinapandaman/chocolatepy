@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import jwt
 import pytest
 from chocolatepy.auth import Auth
 from pydal import DAL
@@ -78,3 +79,14 @@ def test_auth_register_existed_user(db):
 
     assert auth.register(username=username, password=password)
     assert not auth.register(username=username, password=password)
+
+
+def test_auth_encode_token(db):
+    auth = Auth(db)
+
+    user_id = 1
+
+    token = auth.encode_token(user_id)
+    payload = jwt.decode(token, auth.jwt_secret)
+
+    assert payload["sub"] == user_id
