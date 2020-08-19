@@ -55,16 +55,26 @@ def test_auth_membership_fields(db):
     assert auth.db.auth_membership.group_id.type == "reference auth_group"
 
 
-def test_register(db):
+def test_auth_register(db):
     auth = Auth(db)
 
     username = "foo"
     password = "bar"
 
-    auth.register(username=username, password=password)
+    assert auth.register(username=username, password=password)
 
     user = db(db.auth_user.username == username).select().first()
 
     assert user
     assert username == user.username
     assert auth.encrypt(password) == user.password
+
+
+def test_auth_register_existed_user(db):
+    auth = Auth(db)
+
+    username = "foo"
+    password = "bar"
+
+    assert auth.register(username=username, password=password)
+    assert not auth.register(username=username, password=password)

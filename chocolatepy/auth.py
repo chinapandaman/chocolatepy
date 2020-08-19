@@ -10,7 +10,7 @@ class Auth(object):
 
         self.db.define_table(
             "auth_user",
-            Field("username", length=512),
+            Field("username", length=512, unique=True),
             Field("password", type="password"),
         )
         self.db.define_table(
@@ -29,9 +29,20 @@ class Auth(object):
         )
 
     def register(self, username, password):
+        user_existed = len(
+            self.db(self.db.auth_user.username == username).select(
+                self.db.auth_user.username
+            )
+        )
+
+        if user_existed:
+            return False
+
         hashed_password = self.encrypt(password)
         self.db.auth_user.insert(**{"username": username, "password": hashed_password})
         self.db.commit()
+
+        return True
 
     @staticmethod
     def encrypt(string):
