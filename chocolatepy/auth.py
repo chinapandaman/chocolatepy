@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 
 import jwt
+from bottle import abort, request
 from pydal import Field
 from pydal.validators import CRYPT
 
@@ -46,10 +47,12 @@ class Auth(object):
             return False
 
         hashed_password = self.encrypt(password)
-        self.db.auth_user.insert(**{"username": username, "password": hashed_password})
+        user_id = self.db.auth_user.insert(
+            **{"username": username, "password": hashed_password}
+        )
         self.db.commit()
 
-        return True
+        return user_id
 
     def login(self, username, password):
         user = (
@@ -77,3 +80,24 @@ class Auth(object):
             "sub": user_id,
         }
         return jwt.encode(payload, self.jwt_secret, self.jwt_alg)
+
+    def decode_token(self, token):
+        try:
+            payload = jwt.decode(token, self.jwt_secret)
+            return payload["sub"]
+        except jwt.ExpiredSignatureError:
+            return "Token expired."
+        except jwt.InvalidTokenError:
+            return "Invalid token."
+
+    def requires_login(self):
+        def inner(func):
+            token = request.query.get("_token")
+
+            sub = self.decode_token(token)
+
+            if sub in ["Token expired.", "Invalid token."]:
+                abort(401, sub)
+            return func()
+
+        return inner

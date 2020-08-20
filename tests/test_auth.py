@@ -2,8 +2,10 @@
 
 import jwt
 import pytest
+from chocolatepy import ChocolateApp
 from chocolatepy.auth import Auth
 from pydal import DAL
+from webtest import TestApp
 
 
 @pytest.fixture
@@ -102,3 +104,38 @@ def test_auth_login_and_receive_token(db):
 
     auth.register(username, password)
     assert auth.login(username, password)
+
+
+def test_auth_decode_token(db):
+    auth = Auth(db)
+
+    username = "foo"
+    password = "bar"
+
+    user_id = auth.register(username, password)
+
+    token = ""
+
+    assert auth.decode_token(token) == "Invalid token."
+
+    # ToDo: test expired token
+
+    token = auth.login(username, password)
+    assert auth.decode_token(token) == user_id
+
+
+@pytest.fixture
+def app():
+    app = ChocolateApp("app")
+
+    @app.auth.requires_login()
+    @app.route("/")
+    def index():
+        return "app"
+
+    return app
+
+
+def test_auth_requires_login():
+    # ToDo: finish this
+    assert False
