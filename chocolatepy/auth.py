@@ -36,6 +36,13 @@ class Auth(object):
         self.jwt_exp = 3600
         self.jwt_alg = "HS256"
 
+    def create_group(self, role, description):
+        group_id = self.db.auth_group.insert(
+            **{"role": role, "description": description}
+        )
+        self.db.commit()
+        return group_id
+
     def register(self, username, password):
         user_existed = len(
             self.db(self.db.auth_user.username == username).select(
@@ -83,7 +90,7 @@ class Auth(object):
 
     def decode_token(self, token):
         try:
-            payload = jwt.decode(token, self.jwt_secret)
+            payload = jwt.decode(token, self.jwt_secret, algorithms=[self.jwt_alg])
             return payload["sub"]
         except jwt.ExpiredSignatureError:
             return "Token expired."
