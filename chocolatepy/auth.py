@@ -36,12 +36,19 @@ class Auth(object):
         self.jwt_exp = 3600
         self.jwt_alg = "HS256"
 
-    def create_group(self, role, description):
+    def add_group(self, role, description):
         group_id = self.db.auth_group.insert(
             **{"role": role, "description": description}
         )
         self.db.commit()
         return group_id
+
+    def add_permission(self, group_id, name, table_name):
+        permission_id = self.db.auth_permission.insert(
+            **{"group_id": group_id, "name": name, "table_name": table_name}
+        )
+        self.db.commit()
+        return permission_id
 
     def register(self, username, password):
         user_existed = len(

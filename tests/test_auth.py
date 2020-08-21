@@ -62,20 +62,44 @@ def test_auth_membership_fields(db):
     assert auth.db.auth_membership.group_id.type == "reference auth_group"
 
 
-def test_auth_create_group(db):
+def test_auth_add_group(db):
     auth = Auth(db)
 
     role = "foo"
     description = "bar"
 
     group = (
-        db(db.auth_group.id == auth.create_group(role, description))
+        db(db.auth_group.id == auth.add_group(role, description))
         .select(db.auth_group.role, db.auth_group.description)
         .first()
     )
 
     assert group["role"] == role
     assert group["description"] == description
+
+
+def test_auth_add_permission(db):
+    auth = Auth(db)
+
+    role = "foo"
+    description = "bar"
+
+    group_id = auth.add_group(role, description)
+
+    permissions = [
+        ("create", "foobar"),
+        ("read", "foobar"),
+        ("update", "foobar"),
+        ("delete", "foobar"),
+    ]
+
+    for each in permissions:
+        auth.add_permission(group_id, each[0], each[1])
+
+    for each in db(db.auth_permission.group_id == group_id).select(
+        db.auth_permission.name, db.auth_permission.table_name
+    ):
+        assert (each["name"], each["table_name"]) in permissions
 
 
 def test_auth_register(db):
