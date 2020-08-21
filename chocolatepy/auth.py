@@ -37,7 +37,11 @@ class Auth(object):
         self.jwt_alg = "HS256"
 
     def create_group(self, role, description):
-        return self.db.auth_group.insert(**{"role": role, "description": description})
+        group_id = self.db.auth_group.insert(
+            **{"role": role, "description": description}
+        )
+        self.db.commit()
+        return group_id
 
     def register(self, username, password):
         user_existed = len(
