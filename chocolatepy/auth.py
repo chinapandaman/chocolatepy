@@ -50,6 +50,11 @@ class Auth(object):
         self.db.commit()
         return permission_id
 
+    def add_membership(self, group_id, user_id):
+        self.db.auth_membership.insert(**{"user_id": user_id, "group_id": group_id})
+        self.db.commit()
+        return True
+
     def register(self, username, password):
         user_existed = len(
             self.db(self.db.auth_user.username == username).select(

@@ -102,6 +102,31 @@ def test_auth_add_permission(db):
         assert (each["name"], each["table_name"]) in permissions
 
 
+def test_auth_add_membership(db):
+    auth = Auth(db)
+
+    groups = [("admin", "admin of the app"), ("user", "normal user")]
+
+    username = "user"
+    password = "password"
+
+    user_id = auth.register(username, password)
+
+    group_ids = []
+
+    for each in groups:
+        group_id = auth.add_group(each[0], each[1])
+        auth.add_membership(group_id, user_id)
+        group_ids.append(group_id)
+
+    assert [
+        each["group_id"]
+        for each in db(db.auth_membership.user_id == user_id).select(
+            db.auth_membership.group_id
+        )
+    ] == group_ids
+
+
 def test_auth_register(db):
     auth = Auth(db)
 
