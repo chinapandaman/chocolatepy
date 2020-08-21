@@ -143,6 +143,15 @@ class Auth(object):
         sub = self.requires_login()
 
         if role not in sub["groups"]:
-            abort(401, "Not a member of {}".format(role))
+            abort(401, "Not a member of {}.".format(role))
 
         return sub
+
+    def requires_permission(self, name, table_name):
+        sub = self.requires_login()
+
+        for each in sub["permissions"]:
+            if name == each["name"] and table_name == each["table_name"]:
+                return sub
+
+        abort(401, "Permission denied.")

@@ -215,6 +215,11 @@ def app():
         app.auth.requires_membership("admin")
         return "foo"
 
+    @app.route("/bar")
+    def bar():
+        app.auth.requires_permission("read", "bar")
+        return "bar"
+
     return app
 
 
@@ -261,3 +266,29 @@ def test_auth_requires_membership(app):
 
     assert test_app.get("/foo", {"_token": token}).status == "200 OK"
     assert test_app.get("/foo", {"_token": token}).text == "foo"
+
+
+def test_auth_requires_permission(app):
+    test_app = TestApp(app.app)
+
+    username = "foo"
+    password = "bar"
+
+    user_id = app.auth.register(username, password)
+
+    group_id = app.auth.add_group("developer", "developer of the app")
+    app.auth.add_membership(group_id, user_id)
+
+    token = app.auth.login(username, password)
+
+    try:
+        test_app.get("/bar", {"_token": token})
+        assert False
+    except AppError:
+        assert True
+
+    app.auth.add_permission(group_id, "read", "bar")
+    token = app.auth.login(username, password)
+
+    assert test_app.get("/bar", {"_token": token}).status == "200 OK"
+    assert test_app.get("/bar", {"_token": token}).text == "bar"
