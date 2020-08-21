@@ -91,13 +91,10 @@ class Auth(object):
             return "Invalid token."
 
     def requires_login(self):
-        def inner(func):
-            token = request.query.get("_token")
+        token = request.query.get("_token")
 
-            sub = self.decode_token(token)
+        sub = self.decode_token(token)
 
-            if sub in ["Token expired.", "Invalid token."]:
-                abort(401, sub)
-            return func()
-
-        return inner
+        if sub in ["Token expired.", "Invalid token."]:
+            abort(401, sub)
+        return sub

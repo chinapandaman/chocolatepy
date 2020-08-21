@@ -2,10 +2,12 @@
 
 import jwt
 import pytest
-from chocolatepy import ChocolateApp
-from chocolatepy.auth import Auth
 from pydal import DAL
 from webtest import TestApp
+from webtest.app import AppError
+
+from chocolatepy import ChocolateApp
+from chocolatepy.auth import Auth
 
 
 @pytest.fixture
@@ -128,14 +130,28 @@ def test_auth_decode_token(db):
 def app():
     app = ChocolateApp("app")
 
-    @app.auth.requires_login()
     @app.route("/")
     def index():
+        app.auth.requires_login()
         return "app"
 
     return app
 
 
-def test_auth_requires_login():
-    # ToDo: finish this
-    assert False
+def test_auth_requires_login(app):
+    test_app = TestApp(app.app)
+
+    try:
+        test_app.get("/")
+    except AppError:
+        assert True
+
+    username = "foo"
+    password = "bar"
+
+    app.auth.register(username, password)
+
+    token = app.auth.login(username, password)
+
+    assert test_app.get("/", {"_token": token}).status == "200 OK"
+    assert test_app.get("/", {"_token": token}).text == "app"
