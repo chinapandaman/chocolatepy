@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from chocolatepy import ChocolateApp, ChocolateServer, NonChocolateAppError
 from webtest import TestApp
+
+from chocolatepy import ChocolateApp, ChocolateServer, NonChocolateAppError
 
 
 @pytest.fixture
@@ -74,6 +75,7 @@ def test_register_non_chocolate_app(app_one, app_two, app_three):
 
     try:
         server.register_apps(app_one, app_two, app_three, bad_app)
+        assert False
     except NonChocolateAppError:
         assert True
 
@@ -85,5 +87,6 @@ def test_register_non_chocolate_app_as_default(app_one, app_two, app_three):
 
     try:
         server.register_apps(app_one, app_two, app_three, default_app=bad_app)
+        assert False
     except NonChocolateAppError:
         assert True

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import time
+
 import jwt
 import pytest
 from pydal import DAL
@@ -120,7 +122,15 @@ def test_auth_decode_token(db):
 
     assert auth.decode_token(token) == "Invalid token."
 
-    # ToDo: test expired token
+    auth.jwt_exp = 1
+
+    token = auth.login(username, password)
+
+    time.sleep(5)
+
+    assert auth.decode_token(token) == "Token expired."
+
+    auth.jwt_exp = 3600
 
     token = auth.login(username, password)
     assert auth.decode_token(token) == user_id
@@ -143,6 +153,7 @@ def test_auth_requires_login(app):
 
     try:
         test_app.get("/")
+        assert False
     except AppError:
         assert True
 
