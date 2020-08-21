@@ -36,12 +36,24 @@ class Auth(object):
         self.jwt_exp = 3600
         self.jwt_alg = "HS256"
 
-    def create_group(self, role, description):
+    def add_group(self, role, description):
         group_id = self.db.auth_group.insert(
             **{"role": role, "description": description}
         )
         self.db.commit()
         return group_id
+
+    def add_permission(self, group_id, name, table_name):
+        permission_id = self.db.auth_permission.insert(
+            **{"group_id": group_id, "name": name, "table_name": table_name}
+        )
+        self.db.commit()
+        return permission_id
+
+    def add_membership(self, group_id, user_id):
+        self.db.auth_membership.insert(**{"user_id": user_id, "group_id": group_id})
+        self.db.commit()
+        return True
 
     def register(self, username, password):
         user_existed = len(
@@ -81,10 +93,31 @@ class Auth(object):
         return str(CRYPT(salt=False)(string)[0])
 
     def encode_token(self, user_id):
+        group_ids = [
+            each["group_id"]
+            for each in self.db(self.db.auth_membership.user_id == user_id).select(
+                self.db.auth_membership.group_id,
+            )
+        ]
+
+        groups = [
+            each["role"]
+            for each in self.db(self.db.auth_group.id.belongs(group_ids)).select(
+                self.db.auth_group.role
+            )
+        ]
+
+        permissions = [
+            {"name": each["name"], "table_name": each["table_name"]}
+            for each in self.db(
+                self.db.auth_permission.group_id.belongs(group_ids)
+            ).select(self.db.auth_permission.name, self.db.auth_permission.table_name)
+        ]
+
         payload = {
             "exp": datetime.utcnow() + timedelta(seconds=self.jwt_exp),
             "iat": datetime.utcnow(),
-            "sub": user_id,
+            "sub": {"user_id": user_id, "groups": groups, "permissions": permissions},
         }
         return jwt.encode(payload, self.jwt_secret, self.jwt_alg)
 
@@ -105,3 +138,20 @@ class Auth(object):
         if sub in ["Token expired.", "Invalid token."]:
             abort(401, sub)
         return sub
+
+    def requires_membership(self, role):
+        sub = self.requires_login()
+
+        if role not in sub["groups"]:
+            abort(401, "Not a member of {}.".format(role))
+
+        return sub
+
+    def requires_permission(self, name, table_name):
+        sub = self.requires_login()
+
+        for each in sub["permissions"]:
+            if name == each["name"] and table_name == each["table_name"]:
+                return sub
+
+        abort(401, "Permission denied.")
