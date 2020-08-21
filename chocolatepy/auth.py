@@ -93,10 +93,31 @@ class Auth(object):
         return str(CRYPT(salt=False)(string)[0])
 
     def encode_token(self, user_id):
+        group_ids = [
+            each["group_id"]
+            for each in self.db(self.db.auth_membership.user_id == user_id).select(
+                self.db.auth_membership.group_id,
+            )
+        ]
+
+        groups = [
+            each["role"]
+            for each in self.db(self.db.auth_group.id.belongs(group_ids)).select(
+                self.db.auth_group.role
+            )
+        ]
+
+        permissions = [
+            {"name": each["name"], "table_name": each["table_name"]}
+            for each in self.db(
+                self.db.auth_permission.group_id.belongs(group_ids)
+            ).select(self.db.auth_permission.name, self.db.auth_permission.table_name)
+        ]
+
         payload = {
             "exp": datetime.utcnow() + timedelta(seconds=self.jwt_exp),
             "iat": datetime.utcnow(),
-            "sub": user_id,
+            "sub": {"user_id": user_id, "groups": groups, "permissions": permissions},
         }
         return jwt.encode(payload, self.jwt_secret, self.jwt_alg)
 

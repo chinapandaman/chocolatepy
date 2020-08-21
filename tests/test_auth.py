@@ -160,7 +160,7 @@ def test_auth_encode_token(db):
     token = auth.encode_token(user_id)
     payload = jwt.decode(token, auth.jwt_secret, algorithms=[auth.jwt_alg])
 
-    assert payload["sub"] == user_id
+    assert payload["sub"]["user_id"] == user_id
 
 
 def test_auth_login_and_receive_token(db):
@@ -198,7 +198,7 @@ def test_auth_decode_token(db):
     auth.jwt_exp = 3600
 
     token = auth.login(username, password)
-    assert auth.decode_token(token) == user_id
+    assert auth.decode_token(token)["user_id"] == user_id
 
 
 @pytest.fixture
