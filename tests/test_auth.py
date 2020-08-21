@@ -109,7 +109,7 @@ def test_auth_encode_token(db):
     user_id = 1
 
     token = auth.encode_token(user_id)
-    payload = jwt.decode(token, auth.jwt_secret)
+    payload = jwt.decode(token, auth.jwt_secret, algorithms=[auth.jwt_alg])
 
     assert payload["sub"] == user_id
 
