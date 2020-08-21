@@ -138,3 +138,11 @@ class Auth(object):
         if sub in ["Token expired.", "Invalid token."]:
             abort(401, sub)
         return sub
+
+    def requires_membership(self, role):
+        sub = self.requires_login()
+
+        if role not in sub["groups"]:
+            abort(401, "Not a member of {}".format(role))
+
+        return sub

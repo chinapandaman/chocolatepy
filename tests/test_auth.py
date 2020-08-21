@@ -210,6 +210,11 @@ def app():
         app.auth.requires_login()
         return "app"
 
+    @app.route("/foo")
+    def foo():
+        app.auth.requires_membership("admin")
+        return "foo"
+
     return app
 
 
@@ -231,3 +236,28 @@ def test_auth_requires_login(app):
 
     assert test_app.get("/", {"_token": token}).status == "200 OK"
     assert test_app.get("/", {"_token": token}).text == "app"
+
+
+def test_auth_requires_membership(app):
+    test_app = TestApp(app.app)
+
+    username = "foo"
+    password = "bar"
+
+    user_id = app.auth.register(username, password)
+
+    token = app.auth.login(username, password)
+
+    try:
+        test_app.get("/foo", {"_token": token})
+        assert False
+    except AppError:
+        assert True
+
+    group_id = app.auth.add_group("admin", "admin of the app")
+    app.auth.add_membership(group_id, user_id)
+
+    token = app.auth.login(username, password)
+
+    assert test_app.get("/foo", {"_token": token}).status == "200 OK"
+    assert test_app.get("/foo", {"_token": token}).text == "foo"
