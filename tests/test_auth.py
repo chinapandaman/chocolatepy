@@ -62,6 +62,22 @@ def test_auth_membership_fields(db):
     assert auth.db.auth_membership.group_id.type == "reference auth_group"
 
 
+def test_auth_create_group(db):
+    auth = Auth(db)
+
+    role = "foo"
+    description = "bar"
+
+    group = (
+        db(db.auth_group.id == auth.create_group(role, description))
+        .select(db.auth_group.role, db.auth_group.description)
+        .first()
+    )
+
+    assert group["role"] == role
+    assert group["description"] == description
+
+
 def test_auth_register(db):
     auth = Auth(db)
 

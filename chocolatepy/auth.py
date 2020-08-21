@@ -36,6 +36,9 @@ class Auth(object):
         self.jwt_exp = 3600
         self.jwt_alg = "HS256"
 
+    def create_group(self, role, description):
+        return self.db.auth_group.insert(**{"role": role, "description": description})
+
     def register(self, username, password):
         user_existed = len(
             self.db(self.db.auth_user.username == username).select(
