@@ -39,10 +39,21 @@ def app_three():
     return app
 
 
-def test_register_apps(app_one, app_two, app_three):
+@pytest.fixture
+def app_four():
+    app = ChocolateApp("four")
+
+    @app.route("/<value>")
+    def index(value):
+        return value
+
+    return app
+
+
+def test_register_apps(app_one, app_two, app_three, app_four):
     server = ChocolateServer()
 
-    server.register_apps(app_one, app_two, app_three)
+    server.register_apps(app_one, app_two, app_three, app_four)
 
     app = TestApp(server.server)
 
@@ -55,38 +66,41 @@ def test_register_apps(app_one, app_two, app_three):
     assert app.get("/three").status == "200 OK"
     assert app.get("/three").text == "three"
 
+    assert app.get("/four/foo").status == "200 OK"
+    assert app.get("/four/foo").text == "foo"
+
     assert app.get("/one").text == app.get("/").text
 
 
-def test_register_apps_with_default_app(app_one, app_two, app_three):
+def test_register_apps_with_default_app(app_one, app_two, app_three, app_four):
     server = ChocolateServer()
 
-    server.register_apps(app_one, app_three, default_app=app_two)
+    server.register_apps(app_one, app_three, app_four, default_app=app_two)
 
     app = TestApp(server.server)
 
     assert app.get("/two").text == app.get("/").text
 
 
-def test_register_non_chocolate_app(app_one, app_two, app_three):
+def test_register_non_chocolate_app(app_one, app_two, app_three, app_four):
     server = ChocolateServer()
 
-    bad_app = "app_four"
+    bad_app = "app_five"
 
     try:
-        server.register_apps(app_one, app_two, app_three, bad_app)
+        server.register_apps(app_one, app_two, app_three, app_four, bad_app)
         assert False
     except NonChocolateAppError:
         assert True
 
 
-def test_register_non_chocolate_app_as_default(app_one, app_two, app_three):
+def test_register_non_chocolate_app_as_default(app_one, app_two, app_three, app_four):
     server = ChocolateServer()
 
-    bad_app = 4
+    bad_app = 5
 
     try:
-        server.register_apps(app_one, app_two, app_three, default_app=bad_app)
+        server.register_apps(app_one, app_two, app_three, app_four, default_app=bad_app)
         assert False
     except NonChocolateAppError:
         assert True
