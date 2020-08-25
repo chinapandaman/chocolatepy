@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from webtest import TestApp
-
 from chocolatepy import ChocolateApp, ChocolateServer, NonChocolateAppError
+from webtest import TestApp
 
 
 @pytest.fixture
