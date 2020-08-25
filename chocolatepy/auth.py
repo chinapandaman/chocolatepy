@@ -3,9 +3,10 @@
 from datetime import datetime, timedelta
 
 import jwt
-from bottle import abort, request
 from pydal import Field
 from pydal.validators import CRYPT
+
+from bottle import abort, request
 
 
 class Auth(object):

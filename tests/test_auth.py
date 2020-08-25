@@ -4,12 +4,11 @@ import time
 
 import jwt
 import pytest
+from chocolatepy import ChocolateApp
+from chocolatepy.auth import Auth
 from pydal import DAL
 from webtest import TestApp
 from webtest.app import AppError
-
-from chocolatepy import ChocolateApp
-from chocolatepy.auth import Auth
 
 
 @pytest.fixture

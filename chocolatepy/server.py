@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from bottle import Bottle, run
-
 from app import ChocolateApp
+
+from bottle import Bottle, run
 
 
 class BaseServerException(Exception):
