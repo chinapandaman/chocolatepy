@@ -7,8 +7,9 @@ import pytest
 from chocolatepy import ChocolateApp
 from chocolatepy.auth import Auth
 from pydal import DAL
-from webtest import TestApp
-from webtest.app import AppError
+from webtest import AppError, TestApp
+
+from bottle import abort
 
 
 @pytest.fixture
@@ -206,23 +207,26 @@ def app():
 
     @app.route("/")
     def index():
-        app.auth.requires_login()
+        if not app.auth.is_logged_in():
+            abort(401)
         return "app"
 
     @app.route("/foo")
     def foo():
-        app.auth.requires_membership("admin")
+        if not app.auth.has_membership("admin"):
+            abort(401)
         return "foo"
 
     @app.route("/bar")
     def bar():
-        app.auth.requires_permission("read", "bar")
+        if not app.auth.has_permission("read", "bar"):
+            abort(401)
         return "bar"
 
     return app
 
 
-def test_auth_requires_login(app):
+def test_auth_is_logged_in(app):
     test_app = TestApp(app.app)
 
     try:
@@ -242,7 +246,7 @@ def test_auth_requires_login(app):
     assert test_app.get("/", {"_token": token}).text == "app"
 
 
-def test_auth_requires_membership(app):
+def test_auth_has_membership(app):
     test_app = TestApp(app.app)
 
     username = "foo"
@@ -267,7 +271,7 @@ def test_auth_requires_membership(app):
     assert test_app.get("/foo", {"_token": token}).text == "foo"
 
 
-def test_auth_requires_permission(app):
+def test_auth_has_permission(app):
     test_app = TestApp(app.app)
 
     username = "foo"

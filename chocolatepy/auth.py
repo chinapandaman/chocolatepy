@@ -6,7 +6,7 @@ import jwt
 from pydal import Field
 from pydal.validators import CRYPT
 
-from bottle import abort, request
+from bottle import request
 
 
 class Auth(object):
@@ -131,28 +131,34 @@ class Auth(object):
         except jwt.InvalidTokenError:
             return "Invalid token."
 
-    def requires_login(self):
+    def is_logged_in(self):
         token = request.query.get("_token")
 
         sub = self.decode_token(token)
 
         if sub in ["Token expired.", "Invalid token."]:
-            abort(401, sub)
+            return False
         return sub
 
-    def requires_membership(self, role):
-        sub = self.requires_login()
+    def has_membership(self, role):
+        sub = self.is_logged_in()
+
+        if not isinstance(sub, dict):
+            return False
 
         if role not in sub["groups"]:
-            abort(401, "Not a member of {}.".format(role))
+            return False
 
         return sub
 
-    def requires_permission(self, name, table_name):
-        sub = self.requires_login()
+    def has_permission(self, name, table_name):
+        sub = self.is_logged_in()
+
+        if not isinstance(sub, dict):
+            return False
 
         for each in sub["permissions"]:
             if name == each["name"] and table_name == each["table_name"]:
                 return sub
 
-        abort(401, "Permission denied.")
+        return False
