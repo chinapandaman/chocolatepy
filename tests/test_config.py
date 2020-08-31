@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import nt
 from chocolatepy.config import ChocolateConfig
 
 
@@ -10,8 +9,8 @@ def test_set_config():
     assert app_config.set_config("s1", "k1", "v1")
     assert app_config.set_config("s2", "k2", "v2")
 
-    assert nt.environ["app_one.s1.k1"] == "v1"
-    assert nt.environ["app_one.s2.k2"] == "v2"
+    assert app_config.env.environ["app_one.s1.k1"] == "v1"
+    assert app_config.env.environ["app_one.s2.k2"] == "v2"
 
 
 def test_get_config():
