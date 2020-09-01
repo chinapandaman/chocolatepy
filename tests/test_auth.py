@@ -158,7 +158,7 @@ def test_auth_encode_token(db):
     user_id = 1
 
     token = auth.encode_token(user_id)
-    payload = jwt.decode(token, auth.jwt_secret, algorithms=[auth.jwt_alg])
+    payload = jwt.decode(token, "secret", algorithms=["HS256"])
 
     assert payload["sub"]["user_id"] == user_id
 
@@ -187,7 +187,7 @@ def test_auth_decode_token(db):
 
     assert auth.decode_token(token) == "Invalid token."
 
-    auth.jwt_exp = 1
+    auth.env.environ["{}.{}.{}".format("app", "auth", "jwt_exp")] = "1"
 
     token = auth.login(username, password)
 
@@ -195,7 +195,7 @@ def test_auth_decode_token(db):
 
     assert auth.decode_token(token) == "Token expired."
 
-    auth.jwt_exp = 3600
+    auth.env.environ["{}.{}.{}".format("app", "auth", "jwt_exp")] = "3600"
 
     token = auth.login(username, password)
     assert auth.decode_token(token)["user_id"] == user_id
