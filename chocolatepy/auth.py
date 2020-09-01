@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import os
 from datetime import datetime, timedelta
 
 import jwt
+from helper import ChocolateHelper
 from pydal import Field
 from pydal.validators import CRYPT
 
@@ -12,6 +14,12 @@ from bottle import request
 class Auth(object):
     def __init__(self, db):
         self.db = db
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
 
         self.db.define_table(
             "auth_user",
@@ -32,10 +40,6 @@ class Auth(object):
             Field("user_id", "reference auth_user"),
             Field("group_id", "reference auth_group"),
         )
-
-        self.jwt_secret = "secret"
-        self.jwt_exp = 3600
-        self.jwt_alg = "HS256"
 
     def add_group(self, role, description):
         group_id = self.db.auth_group.insert(
@@ -116,15 +120,50 @@ class Auth(object):
         ]
 
         payload = {
-            "exp": datetime.utcnow() + timedelta(seconds=self.jwt_exp),
+            "exp": datetime.utcnow()
+            + timedelta(
+                seconds=int(
+                    self.env.environ.get(
+                        "{}.{}.{}".format(
+                            ChocolateHelper().current_app_name(), "auth", "jwt_exp"
+                        )
+                    )
+                )
+            ),
             "iat": datetime.utcnow(),
             "sub": {"user_id": user_id, "groups": groups, "permissions": permissions},
         }
-        return jwt.encode(payload, self.jwt_secret, self.jwt_alg)
+        return jwt.encode(
+            payload,
+            self.env.environ.get(
+                "{}.{}.{}".format(
+                    ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                )
+            ),
+            self.env.environ.get(
+                "{}.{}.{}".format(
+                    ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                )
+            ),
+        )
 
     def decode_token(self, token):
         try:
-            payload = jwt.decode(token, self.jwt_secret, algorithms=[self.jwt_alg])
+            payload = jwt.decode(
+                token,
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                    )
+                ),
+                algorithms=[
+                    self.env.environ.get(
+                        "{}.{}.{}".format(
+                            ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                        )
+                    )
+                ],
+            )
             return payload["sub"]
         except jwt.ExpiredSignatureError:
             return "Token expired."
