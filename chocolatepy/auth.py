@@ -148,27 +148,21 @@ class Auth(object):
         )
 
     def decode_token(self, token):
-        try:
-            payload = jwt.decode(
-                token,
+        return ChocolateHelper().decode_token(
+            token,
+            self.env.environ.get(
+                "{}.{}.{}".format(
+                    ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                )
+            ),
+            [
                 self.env.environ.get(
                     "{}.{}.{}".format(
-                        ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                        ChocolateHelper().current_app_name(), "auth", "jwt_alg"
                     )
-                ),
-                algorithms=[
-                    self.env.environ.get(
-                        "{}.{}.{}".format(
-                            ChocolateHelper().current_app_name(), "auth", "jwt_alg"
-                        )
-                    )
-                ],
-            )
-            return payload["sub"]
-        except jwt.ExpiredSignatureError:
-            return "Token expired."
-        except jwt.InvalidTokenError:
-            return "Invalid token."
+                )
+            ],
+        )
 
     def is_logged_in(self):
         token = request.query.get("_token")
