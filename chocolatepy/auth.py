@@ -271,3 +271,49 @@ class RequiresMembership(object):
             return f(*args, **kwargs)
 
         return wrapped_f
+
+
+class RequiresPermission(object):
+    def __init__(self, name, table_name):
+        self.name = name
+        self.table_name = table_name
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            token = request.query.get("_token")
+
+            sub = ChocolateHelper().decode_token(
+                token,
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                    )
+                ),
+                [
+                    self.env.environ.get(
+                        "{}.{}.{}".format(
+                            ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                        )
+                    )
+                ],
+            )
+
+            if sub in ["Token expired.", "Invalid token."]:
+                abort(401)
+
+            if not isinstance(sub, dict):
+                abort(401)
+
+            for each in sub["permissions"]:
+                if self.name == each["name"] and self.table_name == each["table_name"]:
+                    return f(*args, **kwargs)
+
+            abort(401)
+
+        return wrapped_f
