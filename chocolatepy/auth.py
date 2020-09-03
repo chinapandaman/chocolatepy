@@ -8,7 +8,7 @@ from helper import ChocolateHelper
 from pydal import Field
 from pydal.validators import CRYPT
 
-from bottle import request
+from bottle import abort, request
 
 
 class Auth(object):
@@ -195,3 +195,38 @@ class Auth(object):
                 return sub
 
         return False
+
+
+class RequiresLogin(object):
+    def __init__(self, f):
+        self.f = f
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
+
+    def __call__(self, *args, **kwargs):
+        token = request.query.get("_token")
+
+        sub = ChocolateHelper().decode_token(
+            token,
+            self.env.environ.get(
+                "{}.{}.{}".format(
+                    ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                )
+            ),
+            [
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                    )
+                )
+            ],
+        )
+
+        if sub in ["Token expired.", "Invalid token."]:
+            abort(401)
+
+        return self.f(*args, **kwargs)
