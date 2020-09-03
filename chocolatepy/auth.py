@@ -234,7 +234,7 @@ class RequiresLogin(object):
         )
 
         if sub in ["Token expired.", "Invalid token."]:
-            abort(401)
+            abort(401, sub)
 
         return self.f(*args, **kwargs)
 
@@ -270,10 +270,10 @@ class RequiresMembership(object):
             )
 
             if sub in ["Token expired.", "Invalid token."]:
-                abort(401)
+                abort(401, sub)
 
             if self.role not in sub["groups"]:
-                abort(401)
+                abort(401, "Invalid membership.")
 
             return f(*args, **kwargs)
 
@@ -312,7 +312,7 @@ class RequiresPermission(object):
             )
 
             if sub in ["Token expired.", "Invalid token."]:
-                abort(401)
+                abort(401, sub)
 
             if not isinstance(sub, dict):
                 abort(401)
@@ -321,6 +321,6 @@ class RequiresPermission(object):
                 if self.name == each["name"] and self.table_name == each["table_name"]:
                     return f(*args, **kwargs)
 
-            abort(401)
+            abort(401, "Invalid Permission.")
 
         return wrapped_f
