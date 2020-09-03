@@ -93,9 +93,16 @@ class Auth(object):
 
         return self.encode_token(user["id"])
 
-    @staticmethod
-    def encrypt(string):
-        return str(CRYPT(salt=False)(string)[0])
+    def encrypt(self, string):
+        return str(
+            CRYPT(
+                salt=self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "password_salt"
+                    )
+                )
+            )(string)[0]
+        )
 
     def encode_token(self, user_id):
         group_ids = [
