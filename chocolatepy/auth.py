@@ -324,3 +324,17 @@ class RequiresPermission(object):
             abort(401, "Invalid Permission.")
 
         return wrapped_f
+
+
+class Requires(object):
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            if not self.expression:
+                abort(401)
+
+            return f(*args, **kwargs)
+
+        return wrapped_f

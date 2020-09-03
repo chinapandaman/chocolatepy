@@ -5,8 +5,8 @@ import time
 import jwt
 import pytest
 from chocolatepy import ChocolateApp
-from chocolatepy.auth import (Auth, RequiresLogin, RequiresMembership,
-                              RequiresPermission)
+from chocolatepy.auth import (Auth, Requires, RequiresLogin,
+                              RequiresMembership, RequiresPermission)
 from pydal import DAL
 from webtest import AppError, TestApp
 
@@ -239,6 +239,16 @@ def app():
     def permission_required(r):
         return r
 
+    @app.route("/requires_false")
+    @Requires(False)
+    def requires_false():
+        return "False"
+
+    @app.route("/requires_true")
+    @Requires(True)
+    def requires_false():
+        return "True"
+
     return app
 
 
@@ -382,3 +392,16 @@ def test_auth_requires_permission(app):
 
     assert test_app.get("/permission_required/r", {"_token": token}).status == "200 OK"
     assert test_app.get("/permission_required/r", {"_token": token}).text == "r"
+
+
+def test_auth_requires(app):
+    test_app = TestApp(app.app)
+
+    try:
+        test_app.get("/requires_false")
+        assert False
+    except AppError:
+        assert True
+
+    assert test_app.get("/requires_true").status == "200 OK"
+    assert test_app.get("/requires_true").text == "True"
