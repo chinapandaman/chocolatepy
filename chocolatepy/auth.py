@@ -230,3 +230,44 @@ class RequiresLogin(object):
             abort(401)
 
         return self.f(*args, **kwargs)
+
+
+class RequiresMembership(object):
+    def __init__(self, role):
+        self.role = role
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            token = request.query.get("_token")
+
+            sub = ChocolateHelper().decode_token(
+                token,
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                    )
+                ),
+                [
+                    self.env.environ.get(
+                        "{}.{}.{}".format(
+                            ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                        )
+                    )
+                ],
+            )
+
+            if sub in ["Token expired.", "Invalid token."]:
+                abort(401)
+
+            if self.role not in sub["groups"]:
+                abort(401)
+
+            return f(*args, **kwargs)
+
+        return wrapped_f
