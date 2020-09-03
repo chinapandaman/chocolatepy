@@ -21,3 +21,4 @@ class ChocolateApp(object):
         self.config.set_config(section="auth", key="jwt_secret", value="secret")
         self.config.set_config(section="auth", key="jwt_exp", value="3600")
         self.config.set_config(section="auth", key="jwt_alg", value="HS256")
+        self.config.set_config(section="auth", key="password_salt", value="salt")

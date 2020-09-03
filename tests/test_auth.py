@@ -5,7 +5,8 @@ import time
 import jwt
 import pytest
 from chocolatepy import ChocolateApp
-from chocolatepy.auth import Auth
+from chocolatepy.auth import (Auth, Requires, RequiresLogin,
+                              RequiresMembership, RequiresPermission)
 from pydal import DAL
 from webtest import AppError, TestApp
 
@@ -223,6 +224,31 @@ def app():
             abort(401)
         return "bar"
 
+    @app.route("/login_required/<var>")
+    @RequiresLogin
+    def login_required(var):
+        return var
+
+    @app.route("/membership_required/<v>")
+    @RequiresMembership("admin")
+    def membership_required(v):
+        return v
+
+    @app.route("/permission_required/<r>")
+    @RequiresPermission("read", "bar")
+    def permission_required(r):
+        return r
+
+    @app.route("/requires_false")
+    @Requires(False)
+    def requires_false():
+        return "False"
+
+    @app.route("/requires_true")
+    @Requires(True)
+    def requires_false():
+        return "True"
+
     return app
 
 
@@ -295,3 +321,87 @@ def test_auth_has_permission(app):
 
     assert test_app.get("/bar", {"_token": token}).status == "200 OK"
     assert test_app.get("/bar", {"_token": token}).text == "bar"
+
+
+def test_auth_requires_login(app):
+    test_app = TestApp(app.app)
+
+    try:
+        test_app.get("/login_required/var")
+        assert False
+    except AppError:
+        assert True
+
+    username = "foo"
+    password = "bar"
+
+    app.auth.register(username, password)
+
+    token = app.auth.login(username, password)
+
+    assert test_app.get("/login_required/var", {"_token": token}).status == "200 OK"
+    assert test_app.get("/login_required/var", {"_token": token}).text == "var"
+
+
+def test_auth_requires_membership(app):
+    test_app = TestApp(app.app)
+
+    username = "foo"
+    password = "bar"
+
+    user_id = app.auth.register(username, password)
+
+    token = app.auth.login(username, password)
+
+    try:
+        test_app.get("/membership_required/v", {"_token": token})
+        assert False
+    except AppError:
+        assert True
+
+    group_id = app.auth.add_group("admin", "admin of the app")
+    app.auth.add_membership(group_id, user_id)
+
+    token = app.auth.login(username, password)
+
+    assert test_app.get("/membership_required/v", {"_token": token}).status == "200 OK"
+    assert test_app.get("/membership_required/v", {"_token": token}).text == "v"
+
+
+def test_auth_requires_permission(app):
+    test_app = TestApp(app.app)
+
+    username = "foo"
+    password = "bar"
+
+    user_id = app.auth.register(username, password)
+
+    group_id = app.auth.add_group("developer", "developer of the app")
+    app.auth.add_membership(group_id, user_id)
+
+    token = app.auth.login(username, password)
+
+    try:
+        test_app.get("/permission_required/r", {"_token": token})
+        assert False
+    except AppError:
+        assert True
+
+    app.auth.add_permission(group_id, "read", "bar")
+    token = app.auth.login(username, password)
+
+    assert test_app.get("/permission_required/r", {"_token": token}).status == "200 OK"
+    assert test_app.get("/permission_required/r", {"_token": token}).text == "r"
+
+
+def test_auth_requires(app):
+    test_app = TestApp(app.app)
+
+    try:
+        test_app.get("/requires_false")
+        assert False
+    except AppError:
+        assert True
+
+    assert test_app.get("/requires_true").status == "200 OK"
+    assert test_app.get("/requires_true").text == "True"

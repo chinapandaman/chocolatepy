@@ -8,7 +8,7 @@ from helper import ChocolateHelper
 from pydal import Field
 from pydal.validators import CRYPT
 
-from bottle import request
+from bottle import abort, request
 
 
 class Auth(object):
@@ -93,9 +93,16 @@ class Auth(object):
 
         return self.encode_token(user["id"])
 
-    @staticmethod
-    def encrypt(string):
-        return str(CRYPT(salt=False)(string)[0])
+    def encrypt(self, string):
+        return str(
+            CRYPT(
+                salt=self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "password_salt"
+                    )
+                )
+            )(string)[0]
+        )
 
     def encode_token(self, user_id):
         group_ids = [
@@ -195,3 +202,139 @@ class Auth(object):
                 return sub
 
         return False
+
+
+class RequiresLogin(object):
+    def __init__(self, f):
+        self.f = f
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
+
+    def __call__(self, *args, **kwargs):
+        token = request.query.get("_token")
+
+        sub = ChocolateHelper().decode_token(
+            token,
+            self.env.environ.get(
+                "{}.{}.{}".format(
+                    ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                )
+            ),
+            [
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                    )
+                )
+            ],
+        )
+
+        if sub in ["Token expired.", "Invalid token."]:
+            abort(401, sub)
+
+        return self.f(*args, **kwargs)
+
+
+class RequiresMembership(object):
+    def __init__(self, role):
+        self.role = role
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            token = request.query.get("_token")
+
+            sub = ChocolateHelper().decode_token(
+                token,
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                    )
+                ),
+                [
+                    self.env.environ.get(
+                        "{}.{}.{}".format(
+                            ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                        )
+                    )
+                ],
+            )
+
+            if sub in ["Token expired.", "Invalid token."]:
+                abort(401, sub)
+
+            if self.role not in sub["groups"]:
+                abort(401, "Invalid membership.")
+
+            return f(*args, **kwargs)
+
+        return wrapped_f
+
+
+class RequiresPermission(object):
+    def __init__(self, name, table_name):
+        self.name = name
+        self.table_name = table_name
+        self.env = os
+
+        if os.name == "nt":
+            import nt
+
+            self.env = nt
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            token = request.query.get("_token")
+
+            sub = ChocolateHelper().decode_token(
+                token,
+                self.env.environ.get(
+                    "{}.{}.{}".format(
+                        ChocolateHelper().current_app_name(), "auth", "jwt_secret"
+                    )
+                ),
+                [
+                    self.env.environ.get(
+                        "{}.{}.{}".format(
+                            ChocolateHelper().current_app_name(), "auth", "jwt_alg"
+                        )
+                    )
+                ],
+            )
+
+            if sub in ["Token expired.", "Invalid token."]:
+                abort(401, sub)
+
+            if not isinstance(sub, dict):
+                abort(401)
+
+            for each in sub["permissions"]:
+                if self.name == each["name"] and self.table_name == each["table_name"]:
+                    return f(*args, **kwargs)
+
+            abort(401, "Invalid Permission.")
+
+        return wrapped_f
+
+
+class Requires(object):
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            if not self.expression:
+                abort(401)
+
+            return f(*args, **kwargs)
+
+        return wrapped_f
