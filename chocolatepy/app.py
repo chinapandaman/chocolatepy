@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from bottle import Bottle
-from pydal import DAL
-
 from auth import Auth
 from config import ChocolateConfig
+from pydal import DAL
+
+from bottle import Bottle
 
 
 class BaseAppException(Exception):
-    """Base Exception for ChocolateServer"""
+    """Base Exception for ChocolateApp"""
 
     pass
 
 
 class InvalidPyDALParameterError(BaseAppException):
-    """Raised when constructing app's pydal with invalid parameters"""
+    """Raised when constructing app's DAL with invalid parameters"""
 
     pass
 
@@ -46,7 +46,6 @@ class ChocolateApp(object):
                 debug=db_settings.get("debug", False),
                 lazy_tables=db_settings.get("lazy_tables", False),
                 db_uid=db_settings.get("db_uid"),
-                do_connect=db_settings.get("do_connect", True),
                 after_connection=db_settings.get("after_connection"),
                 tables=db_settings.get("tables"),
                 ignore_field_case=db_settings.get("ignore_field_case", True),
@@ -66,6 +65,9 @@ class ChocolateApp(object):
 
     @staticmethod
     def validate_pydal_parameters(pydal_params):
+        if not isinstance(pydal_params, dict):
+            raise InvalidPyDALParameterError
+
         acceptable_params = [
             "uri",
             "pool_size",
@@ -85,7 +87,6 @@ class ChocolateApp(object):
             "debug",
             "lazy_tables",
             "db_uid",
-            "do_connect",
             "after_connection",
             "tables",
             "ignore_field_case",
@@ -94,7 +95,7 @@ class ChocolateApp(object):
         ]
 
         for each in pydal_params:
-            if not each in acceptable_params:
+            if each not in acceptable_params:
                 raise InvalidPyDALParameterError
 
         return True
