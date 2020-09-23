@@ -19,8 +19,14 @@ class InvalidPyDALParameterError(BaseAppException):
     pass
 
 
+class InvalidAuthSettingsError(BaseAppException):
+    """Raised when setting app's auth config with invalid parameters"""
+
+    pass
+
+
 class ChocolateApp(object):
-    def __init__(self, app_name, db_settings=None):
+    def __init__(self, app_name, db_settings=None, auth_settings=None):
         self.name = app_name
         self.app = Bottle()
         self.route = self.app.route
@@ -58,10 +64,45 @@ class ChocolateApp(object):
         self.auth = Auth(db=self.db)
 
         self.config = ChocolateConfig(self.name)
-        self.config.set_config(section="auth", key="jwt_secret", value="secret")
-        self.config.set_config(section="auth", key="jwt_exp", value="3600")
-        self.config.set_config(section="auth", key="jwt_alg", value="HS256")
-        self.config.set_config(section="auth", key="password_salt", value="salt")
+
+        auth_config = {}
+        if auth_settings and self.validate_auth_settings(auth_settings):
+            auth_config = auth_settings
+
+        self.config.set_config(
+            section="auth",
+            key="jwt_secret",
+            value=auth_config.get("jwt_secret", "secret"),
+        )
+        self.config.set_config(
+            section="auth", key="jwt_exp", value=str(auth_config.get("jwt_exp", 3600))
+        )
+        self.config.set_config(
+            section="auth", key="jwt_alg", value=auth_config.get("jwt_alg", "HS256")
+        )
+        self.config.set_config(
+            section="auth",
+            key="password_salt",
+            value=auth_config.get("password_salt", "salt"),
+        )
+
+    @staticmethod
+    def validate_auth_settings(auth_settings):
+        if not isinstance(auth_settings, dict):
+            raise InvalidAuthSettingsError
+
+        acceptable_params = ["jwt_secret", "jwt_exp", "jwt_alg", "password_salt"]
+
+        for each in auth_settings:
+            if each not in acceptable_params:
+                raise InvalidAuthSettingsError
+            if each == "jwt_exp":
+                if not isinstance(auth_settings[each], int):
+                    raise InvalidAuthSettingsError
+            elif not isinstance(auth_settings[each], str):
+                raise InvalidAuthSettingsError
+
+        return True
 
     @staticmethod
     def validate_pydal_parameters(pydal_params):
