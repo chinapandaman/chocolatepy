@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from chocolatepy import (ChocolateApp, InvalidAuthSettingsError,
-                         InvalidPyDALParameterError)
+from chocolatepy import (ChocolateApp, DatabaseNotEnabledError,
+                         InvalidAuthSettingsError, InvalidPyDALParameterError)
 from webtest import TestApp
 
 
@@ -90,3 +90,35 @@ def test_app_auth_settings():
     assert app_config["auth"]["jwt_secret"] == "secret"
     assert app_config["auth"]["jwt_alg"] == "HS256"
     assert app_config["auth"]["password_salt"] == "salt"
+
+
+def test_app_without_db():
+    try:
+        ChocolateApp("test_without_db", db_enabled=False, auth_enabled=True)
+    except DatabaseNotEnabledError:
+        assert True
+
+    try:
+        ChocolateApp(
+            "test_without_db",
+            db_enabled=False,
+            auth_enabled=False,
+            db_settings={"foo": "bar"},
+        )
+    except DatabaseNotEnabledError:
+        assert True
+
+    try:
+        ChocolateApp(
+            "test_without_db",
+            db_enabled=False,
+            auth_enabled=False,
+            auth_settings={"foo": "bar"},
+        )
+    except DatabaseNotEnabledError:
+        assert True
+
+    app = ChocolateApp("test_without_db", db_enabled=False, auth_enabled=False)
+
+    assert not app.db
+    assert not app.auth
