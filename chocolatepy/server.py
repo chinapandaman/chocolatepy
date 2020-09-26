@@ -42,5 +42,23 @@ class ChocolateServer(object):
         if default_app:
             self.server.merge(default_app.app)
 
-    def run(self, host="localhost", port=8080):
-        run(self.server, host=host, port=port)
+    def run(
+        self,
+        host="localhost",
+        port=8080,
+        server="wsgiref",
+        reloader=False,
+        interval=1,
+        quiet=False,
+        debug=False,
+    ):
+        run(
+            self.server,
+            server=server,
+            host=host,
+            port=port,
+            reloader=reloader,
+            interval=interval,
+            quiet=quiet,
+            debug=debug,
+        )
